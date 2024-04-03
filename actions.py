@@ -129,6 +129,81 @@ def get_completion_percentage(training_name: str) -> float:
 
 
 @action
+def get_non_completion_percentage(training_name: str) -> float:
+    """
+    Returns the percentage of the employees in the company who have not completed the named training by the due date.
+
+    Args:
+        training_name: name of the training you want to see the percentage completion for
+
+    Returns:
+        float:  The percentage of employees who have not completed the training by the due date
+    """
+    # Define the path to your SQLite database
+    database_path = 'training_database.db'
+
+    # Create a connection to the database
+    conn = sqlite3.connect(database_path)
+
+    # Create a cursor object using the connection
+    cursor = conn.cursor()
+
+    # SQL query to select name and due_date from the trainings table
+    # query_training_due_date = f"SELECT due_date FROM trainings WHERE name='{training_name}'"
+    
+    
+
+    # try:
+    #     # Execute the query
+    #     cursor.execute(query_training_due_date)
+        
+    #     # Fetch all rows of the query result
+    #     # This will result in a list of tuples
+    #     training_due_date_list = cursor.fetchall()
+    #     training_due_date = training_due_date_list[0][0]
+    # except Exception as error:
+    #     print(f"Query for Training Date failed: {error}")
+    #     return 500.0
+
+    def replace_spaces_with_underscores(input_string):
+        return input_string.replace(" ", "_")
+
+    # Since the Training name the user will input will have spaces it needs to have those spaces replaced with underscores so that the column titles match
+    modified_string = replace_spaces_with_underscores(training_name)
+    print(modified_string)
+
+    # SQL query to select the number of non-null dates and dates that are less then the due date
+    query_employees_who_have_not_completed_training = f"SELECT COUNT(*) AS count FROM employee_training WHERE {modified_string} IS NULL"
+
+    # SQL query to select the total number of employees
+    query_employee_count = "SELECT COUNT(*) AS count FROM employee_training"
+
+    try:
+        cursor.execute(query_employees_who_have_not_completed_training)
+        
+        # Fetch all rows of the query result
+        # This will result in a list of tuples
+        employee_completion = cursor.fetchall()
+
+        cursor.execute(query_employee_count)
+
+        # Fetch all rows of the query result
+        # This will result in a list of tuples
+        employee_count = cursor.fetchall()
+    finally:
+        # Close the cursor and connection to clean up
+        cursor.close()
+        conn.close()
+    
+    try:
+        employee_percentage = (employee_completion[0][0] / employee_count[0][0]) * 100
+    except ZeroDivisionError:
+        return 400.0
+    
+    return employee_percentage
+
+
+@action
 def send_email_reminder(training_name: str) -> str:
     """
     Kicks off am email reminder bot in Sema4's Control Room and returns detailed information 
